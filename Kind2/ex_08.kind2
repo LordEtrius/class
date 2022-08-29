@@ -1,0 +1,89 @@
+//Type Bool
+Bool       : Type
+Bool.true  : Bool
+Bool.false : Bool
+
+Bool.eql (a: Bool) (b: Bool)   : Bool
+Bool.eql Bool.true  Bool.true  = Bool.true
+Bool.eql Bool.false Bool.false = Bool.true
+Bool.eql a          b          = Bool.false
+
+Bool.if <r: Type> (b: Bool)  (if_t: r) (if_f: r) : r
+Bool.if r         Bool.true   if_t      if_f     = if_t
+Bool.if r         Bool.false  if_t      if_f     = if_f
+
+//Type Natural
+Nat                  : Type
+Nat.zero             : Nat
+Nat.succ (pred: Nat) : Nat
+
+Maybe <a: Type> : Type
+Maybe.none <a> : Maybe a
+Maybe.some <a> (value: a) : Maybe a
+
+List <a: Type> : Type
+List.nil <a> : List a
+List.cons <a> (head: a) (tail: List a) : List a
+
+List.head <a: Type> (xs: List a) : Maybe a
+List.head a (List.nil t) = Maybe.none
+List.head a (List.cons t head tail) = Maybe.some head
+
+List.tail <a: Type> (xs: List a) : List a
+List.tail a (List.nil t) = List.nil
+List.tail a (List.cons t head tail) = tail 
+
+List.length <a: Type> (xs: List a) : Nat
+List.length a (List.nil t) = Nat.zero
+List.length a (List.cons t head tail) = Nat.succ (List.length a (tail))
+
+List.last <a: Type> (xs: List a) : Maybe a
+List.last a (List.nil t) = Maybe.none
+List.last a (List.cons t head (List.nil t_) ) = Maybe.some head
+List.last a (List.cons t head tail) = List.last tail
+
+List.init <a: Type> (xs: List a) : List a
+List.init a (List.nil t) = List.nil
+List.init a (List.cons t head (List.nil t_)) = List.nil
+List.init a (List.cons t head tail) = (List.cons a head (List.init tail)) 
+
+List.concat <a: Type> (xs: List a) (ys: List a) : List a
+List.concat a (List.nil t) (List.nil t_) = List.nil
+List.concat a (List.nil t) ys = ys
+List.concat a (List.cons t head tail) ys = (List.cons a head (List.concat a tail ys)) 
+
+List.drop <a: Type> (n: Nat) (xs: List a) : List a
+List.drop a Nat.zero xs = xs
+List.drop a n (List.nil t) = List.nil
+List.drop a (Nat.succ n) (List.cons t head tail) = (List.drop a n tail)
+
+List.take <a: Type> (n: Nat) (xs: List a) : List a
+List.take a Nat.zero xs = List.nil
+List.take a n (List.nil t) = List.nil
+List.take a (Nat.succ n) (List.cons t head tail) = (List.cons a head (List.take a n tail))
+
+
+List.map <a: Type> <b: Type> (fn: a -> b) (xs: List a) : List b
+List.map a b fn (List.nil xs) = List.nil b
+List.map a b fn (List.cons xs head tail) = (List.cons b (fn (head)) (List.map a b fn tail))
+
+
+List.reverse <a: Type> (xs: List a)  : List a
+List.reverse a xs = (List.reverse.go a (List.nil a) (xs))
+
+List.reverse.go <a: Type> (new_list: List a) (old_list: List a) : List a
+List.reverse.go a (new_list) (List.nil t) = new_list
+List.reverse.go a (new_list) (List.cons t head tail) = (List.reverse.go a (List.cons a head new_list) tail)
+
+
+
+Main {
+  let a = List.cons (Nat.succ Nat.zero) (List.cons (Nat.zero) (List.cons (Nat.succ (Nat.succ Nat.zero)) List.nil))
+  let aa = List.cons (Nat.succ Nat.zero) (List.cons (Nat.zero) (List.cons (Nat.succ (Nat.succ Nat.zero)) List.nil))
+  let n = Nat.succ Nat.zero
+  let nn = Nat.succ (Nat.succ Nat.zero)
+  List.reverse aa
+}
+
+
+

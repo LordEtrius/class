@@ -1,0 +1,84 @@
+Bool       : Type
+Bool.true  : Bool
+Bool.false : Bool
+
+// Is true
+// Returns true if input is true
+
+Bool.is_true (a: Bool) : Bool
+Bool.is_true a = a
+
+// Is false
+// Returns true if input is false
+
+Bool.is_false (a: Bool)  : Bool
+Bool.is_false Bool.true  = Bool.false
+Bool.is_false Bool.false = Bool.true
+
+// Negation
+// Returns the opposite of a Bool
+
+Bool.not (a: Bool) : Bool
+Bool.not a = Bool.is_false a
+
+// And
+// Returns true if both inputs are true
+Bool.and (a: Bool) (b: Bool) : Bool
+Bool.and Bool.true Bool.true = Bool.true
+Bool.and a         b         = Bool.false
+
+// Or
+// Returs true if any input is true
+Bool.or (a: Bool) (b:Bool)    : Bool
+Bool.or Bool.false Bool.false = Bool.false
+Bool.or a          b          = Bool.true
+
+// Equal
+// Returs true if both inputs are identical
+Bool.eql (a: Bool) (b: Bool)   : Bool
+Bool.eql Bool.true  Bool.true  = Bool.true
+Bool.eql Bool.false Bool.false = Bool.true 
+Bool.eql a          b          = Bool.false
+
+// Xor
+// Returns true if both inputs are different
+Bool.xor (a: Bool) (b: Bool)   : Bool
+Bool.xor Bool.true  Bool.true  = Bool.false
+Bool.xor Bool.false Bool.false = Bool.false
+Bool.xor a          b          = Bool.true
+//Xor 2
+//Bool.xor (a: Bool) (b: Bool) : Bool
+//Bool.xor Bool.eql ( a b ) = Bool.not (Bool.eql ( a b ))
+
+
+// Nor
+// Returns true if both inputs are false
+Bool.nor (a: Bool) (b: Bool)   : Bool
+Bool.nor Bool.false Bool.false = Bool.true
+Bool.nor a          b          = Bool.false
+
+// Nand
+// Returns false only if both inputs are true
+Bool.nand (a: Bool) (b: Bool) : Bool
+Bool.nand Bool.true Bool.true = Bool.false
+Bool.nand a         b         = Bool.true
+
+// Xnor
+// Returns true if both inputs are identical
+Bool.xnor (a: Bool) (b: Bool) : Bool
+Bool.xnor  a         b        = (Bool.eql a b)
+
+// If Bool true Return If_t 
+// If Bool false Return If_f
+Bool.if <r: Type> (b: Bool) (if_t: r) (if_f: r) : r
+Bool.if r Bool.true  if_t if_f = if_t
+Bool.if r Bool.false if_t if_f = if_f
+
+Main {
+  let a = Bool.true
+  let b = Bool.false 
+  (Bool.nor  b b)
+}
+
+
+

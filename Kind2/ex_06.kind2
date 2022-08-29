@@ -1,0 +1,183 @@
+//Bool
+Bool       : Type
+Bool.true  : Bool
+Bool.false : Bool
+
+Bool.if <r: Type> (b: Bool)  (if_t: r) (if_f: r) : r
+Bool.if r         Bool.true   if_t      if_f     = if_t
+Bool.if r         Bool.false  if_t      if_f     = if_f
+
+
+// Integer Exercises
+
+// Integers
+Inte                : Type
+Inte.neg (num: Neg) : Inte
+Inte.pos (num: Pos) : Inte
+
+Pos                  : Type
+Pos.zero             : Pos
+Pos.succ (pred: Pos) : Pos
+
+Neg                  : Type
+Neg.one              : Neg
+Neg.pred (succ: Neg) : Neg
+
+//Funcao Verdade
+Inte.var (var: Inte) : Inte
+Inte.var  var = var
+//Inte.var (Inte.pos var) = (Inte.pos var)  // Patern match
+//Inte.var (Inte.neg var) = (Inte.neg var)  // Patern match
+
+Inte.inv (a: Inte) : Inte
+Inte.inv (Inte.pos Pos.zero) = (Inte.pos Pos.zero)
+Inte.inv (Inte.pos a) = (Inte.neg (Inte.pos_to_neg a))
+Inte.inv (Inte.neg a) = (Inte.pos (Inte.neg_to_pos a))
+
+Inte.neg_to_pos (a: Neg) : Pos
+Inte.neg_to_pos Neg.one = (Pos.succ Pos.zero)
+Inte.neg_to_pos (Neg.pred a) = (Pos.succ (Inte.neg_to_pos a))
+
+Inte.pos_to_neg (a: Pos) : Neg
+// Inte.pos_to_neg Pos.zero = Neg.one  // Nao deveria existir
+Inte.pos_to_neg (Pos.succ Pos.zero) = Neg.one
+Inte.pos_to_neg (Pos.succ a) = (Neg.pred (Inte.pos_to_neg a))
+
+// Exercises:
+
+// Decrements an Integer
+Inte.dec (a: Inte) : Inte
+Inte.dec (Inte.neg a) = (Inte.neg (Neg.pred a))
+Inte.dec (Inte.pos Pos.zero) = Inte.neg (Neg.one)
+Inte.dec (Inte.pos (Pos.succ a)) = (Inte.pos (a))
+
+// Increments an Integer
+Inte.inc (a: Inte)               : Inte
+Inte.inc (Inte.neg (Neg.one))    = (Inte.pos (Pos.zero))
+Inte.inc (Inte.neg (Neg.pred a)) = (Inte.neg a) 
+Inte.inc (Inte.pos a)            = (Inte.pos (Pos.succ a))
+ 
+
+//Doubles sn Integer
+Inte.dbl (a:Inte) : Inte
+Inte.dbl a = Inte.add a a
+// Inte.dbl (Inte.pos Pos.zero ) = (Inte.pos (Pos.zero))
+// Inte.dbl (Inte.pos a) = (Inte.pos (Pos.succ (Pos.succ a)))
+// Inte.dbl (Inte.neg a) = (Inte.neg (Neg.pred a)) 
+
+//Add an Integer
+Inte.add (a: Inte)              (b: Inte) : Inte
+Inte.add (Inte.pos (Pos.succ a)) b        = (Inte.add (Inte.pos a) (Inte.inc b ) )
+Inte.add (Inte.neg (Neg.pred a)) b        = (Inte.add (Inte.neg a) (Inte.dec b ) ) 
+Inte.add (Inte.pos Pos.zero)     b        = b 
+Inte.add (Inte.neg Neg.one)      b        = Inte.dec b
+
+Inte.sub (a: Inte) (b: Inte) : Inte
+Inte.sub a (Inte.pos Pos.zero) = a 
+Inte.sub a (Inte.pos (Pos.succ b)) = (Inte.sub (Inte.dec a) (Inte.pos b) )
+Inte.sub a (Inte.neg (Neg.one)) = (Inte.inc a)
+Inte.sub a (Inte.neg (Neg.pred b)) = (Inte.sub (Inte.inc a) (Inte.neg b))
+
+Inte.mul (a: Inte) (b: Inte) : Inte
+Inte.mul a b = (Inte.mul.go a b (Inte.pos Pos.zero))
+    
+Inte.mul.go (a: Inte)          (b: Inte)    (res: Inte) : Inte
+Inte.mul.go (Inte.pos Pos.zero) b  res = res
+Inte.mul.go (Inte.pos (Pos.succ a)) b res = (Inte.mul.go (Inte.pos (a)) b (Inte.add b res) )
+Inte.mul.go (Inte.neg Neg.one) b res = (Inte.inv (Inte.add b res))
+Inte.mul.go (Inte.neg (Neg.pred a)) b res =  (Inte.mul.go (Inte.neg (a)) b (Inte.add b res) )
+
+
+Inte.eql (a: Inte) (b: Inte) : Bool
+Inte.eql (Inte.pos Pos.zero) (Inte.pos Pos.zero) = Bool.true
+Inte.eql (Inte.neg Neg.one)  (Inte.neg Neg.one) = Bool.true
+Inte.eql (Inte.pos (Pos.succ a)) (Inte.pos (Pos.succ b)) = (Inte.eql (Inte.pos a) (Inte.pos b))
+Inte.eql (Inte.neg (Neg.pred a)) (Inte.neg (Neg.pred b)) = (Inte.eql (Inte.neg a) (Inte.neg b))
+Inte.eql a                        b                      = Bool.false
+
+Inte.ltn (A: Inte) (b: Inte) : Bool
+Inte.ltn (Inte.pos Pos.zero) (Inte.pos (Pos.succ b)) = Bool.true
+Inte.ltn (Inte.neg a) (Inte.pos b) = Bool.true
+Inte.ltn (Inte.neg (Neg.pred a)) (Inte.neg Neg.one) = Bool.true
+Inte.ltn (Inte.pos (Pos.succ a)) (Inte.pos (Pos.succ b)) = (Inte.ltn (Inte.pos a) (Inte.pos b))
+Inte.ltn (Inte.neg (Neg.pred a)) (Inte.neg (Neg.pred b)) = (Inte.ltn (Inte.neg a) (Inte.neg b))
+Inte.ltn a                        b                      = Bool.false
+
+Inte.lte (A: Inte) (b: Inte) : Bool
+Inte.lte (Inte.pos Pos.zero) (Inte.pos b) = Bool.true
+Inte.lte (Inte.neg a) (Inte.pos b) = Bool.true
+Inte.lte (Inte.neg a) (Inte.neg Neg.one) = Bool.true
+Inte.lte (Inte.pos (Pos.succ a)) (Inte.pos (Pos.succ b)) = (Inte.ltn (Inte.pos a) (Inte.pos b))
+Inte.lte (Inte.neg (Neg.pred a)) (Inte.neg (Neg.pred b)) = (Inte.ltn (Inte.neg a) (Inte.neg b))
+Inte.lte a                        b                      = Bool.false
+
+
+Inte.gtn (a: Inte) (b: Inte) : Bool
+Inte.gtn (Inte.pos (Pos.succ a)) (Inte.pos Pos.zero) = Bool.true
+Inte.gtn (Inte.pos a) (Inte.neg b) = Bool.true
+Inte.gtn (Inte.neg Neg.one) (Inte.neg (Neg.pred b)) = Bool.true
+Inte.gtn (Inte.pos (Pos.succ a)) (Inte.pos (Pos.succ b)) = (Inte.gtn (Inte.pos a) (Inte.pos b))
+Inte.gtn (Inte.neg (Neg.pred a)) (Inte.neg (Neg.pred b)) = (Inte.gtn (Inte.neg a) (Inte.neg b))
+Inte.gtn a                        b                      = Bool.false
+
+Inte.gte (a: Inte) (b: Inte) : Bool
+Inte.gte (Inte.pos a) (Inte.pos Pos.zero) = Bool.true
+Inte.gte (Inte.pos a) (Inte.neg b) = Bool.true
+Inte.gte (Inte.neg Neg.one) (Inte.neg b) = Bool.true
+Inte.gte (Inte.pos (Pos.succ a)) (Inte.pos (Pos.succ b)) = (Inte.gtn (Inte.pos a) (Inte.pos b))
+Inte.gte (Inte.neg (Neg.pred a)) (Inte.neg (Neg.pred b)) = (Inte.gtn (Inte.neg a) (Inte.neg b))
+Inte.gte a                        b                      = Bool.false
+
+Inte.min (a: Inte) (b: Inte) : Inte
+Inte.min a b = if (Inte.ltn a b) { a } else { b } 
+
+Inte.max (a: Inte) (b: Inte) : Inte
+Inte.max a b = if (Inte.gtn a b) { a } else { b }
+
+Inte.hlf (a: Inte) : Inte
+Inte.hlf a = (Inte.div (a) (Inte.pos (Pos.succ (Pos.succ Pos.zero))))
+// Inte.hlf a = (Inte.hlf.go a (Inte.pos Pos.zero))
+
+// Inte.hlf.go (a: Inte) (acum: Inte) : Inte
+// Inte.hlf.go (Inte.pos (Pos.succ a)) acum = (Inte.hlf.go (Inte.dec (Inte.pos a)) (Inte.add acum (Inte.pos (Pos.succ Pos.zero))) )
+// Inte.hlf.go (Inte.neg (Neg.pred a)) acum = (Inte.hlf.go (Inte.inc (Inte.neg a)) (Inte.add acum (Inte.neg Neg.one)))
+
+Inte.div (a: Inte) (b: Inte) : Inte
+Inte.div a b = Inte.div.go a b (Inte.pos Pos.zero)
+
+Inte.div.go (a: Inte)               (b: Inte)              (acum: Inte) : Inte
+Inte.div.go (Inte.pos Pos.zero)      b                      acum        = acum
+Inte.div.go a                       (Inte.pos Pos.zero)     acum        = Inte.pos Pos.zero
+Inte.div.go (Inte.pos a)            (Inte.pos b)            acum        = 
+    if (Inte.gtn (Inte.pos a) (Inte.pos b)) 
+        { (Inte.div.go (Inte.sub (Inte.pos a) (Inte.pos b)) (Inte.pos b) (Inte.inc acum)) }
+     else
+        { if (Inte.eql (Inte.pos a) (Inte.pos b)) { (Inte.inc acum)} else { acum } }
+Inte.div.go (Inte.neg a)             (Inte.neg b)           acum        =        
+    if (Inte.ltn (Inte.neg a) (Inte.neg b))
+        { Inte.div.go (Inte.sub (Inte.neg a) (Inte.neg b)) (Inte.neg b) (Inte.inc acum) }
+     else
+        { if (Inte.eql (Inte.neg a) (Inte.neg b)) { (Inte.inc acum) } else { acum } }   
+Inte.div.go (Inte.neg a)            (Inte.pos b)            acum         =
+    if (Inte.gtn (Inte.inv (Inte.neg a)) (Inte.pos b)) 
+        { (Inte.div.go (Inte.add (Inte.neg a) (Inte.pos b) ) (Inte.pos b) (Inte.dec acum) ) }
+     else
+        { if (Inte.eql (Inte.inv (Inte.neg a)) (Inte.pos b)) { (Inte.dec acum) } else { acum }  }   
+Inte.div.go (Inte.pos a)            (Inte.neg b)            acum         =
+    if (Inte.gtn (Inte.pos a) (Inte.inv (Inte.neg b))) 
+        { (Inte.div.go (Inte.add (Inte.pos a) (Inte.neg b)) (Inte.neg b) (Inte.dec acum) ) }
+     else
+        { if (Inte.eql (Inte.pos a) (Inte.inv (Inte.neg b)) ) { (Inte.dec acum) } else { acum } }   
+
+
+Main {
+    let e = (Inte.pos (Pos.succ (Pos.succ (Pos.succ (Pos.succ (Pos.succ (Pos.succ Pos.zero)))))))
+    let c = (Inte.pos (Pos.succ (Pos.succ (Pos.succ Pos.zero)))) // +3
+    let a = (Inte.pos (Pos.zero)) // 0
+    let b = (Inte.neg (Neg.one))  // -1
+    let d = (Inte.neg (Neg.pred (Neg.pred (Neg.pred Neg.one)))) // -4
+    let f = (Inte.pos (Pos.succ (Pos.succ Pos.zero)))
+    let g = (Inte.neg (Neg.pred (Neg.pred (Neg.pred (Neg.pred Neg.one)))))
+    let h = (Inte.neg (Neg.pred Neg.one))
+    Inte.hlf g
+}

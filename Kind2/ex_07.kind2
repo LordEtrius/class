@@ -1,0 +1,136 @@
+//Bool
+Bool       : Type
+Bool.true  : Bool
+Bool.false : Bool
+
+Bool.if <r: Type> (b: Bool)  (if_t: r) (if_f: r) : r
+Bool.if r         Bool.true   if_t      if_f     = if_t
+Bool.if r         Bool.false  if_t      if_f     = if_f
+
+Nat : Type
+Nat.zero : Nat
+Nat.succ (pred: Nat) : Nat
+
+//Bits
+
+Bits : Type
+Bits.e : Bits
+Bits.o (pred: Bits) : Bits
+Bits.i (pred: Bits) : Bits
+
+Bits.is_empty (b: Bits) : Bool
+Bits.is_empty (Bits.e) = Bool.true
+Bits.is_empty b        = Bool.false
+
+Bits.tail (b: Bits)  : Bits
+Bits.tail Bits.e     = Bits.e
+Bits.tail (Bits.o b) = b
+Bits.tail (Bits.i b) = b
+
+Bits.notb (b: Bits) : Bits
+Bits.notb Bits.e = Bits.e
+Bits.notb (Bits.o b) = (Bits.i (Bits.notb b))
+Bits.notb (Bits.i b) = (Bits.o (Bits.notb b))
+
+Bits.inc (b: Bits) : Bits
+Bits.inc Bits.e = Bits.e
+Bits.inc (Bits.o b) = (Bits.i (b))
+Bits.inc (Bits.i Bits.e) = (Bits.o (Bits.i Bits.e))
+Bits.inc (Bits.i b) = (Bits.o (Bits.inc b))
+
+Bits.dec (b: Bits) : Bits
+Bits.dec Bits.e = Bits.e
+Bits.dec (Bits.o Bits.e) = Bits.e
+Bits.dec (Bits.i b) = Bits.o b
+Bits.dec (Bits.o (Bits.i b)) = (Bits.i (Bits.o (Bits.dec b)))
+Bits.dec (Bits.o (Bits.o b)) = (Bits.i (Bits.i (Bits.dec b)))
+
+Bits.concat (a: Bits)   (b: Bits) : Bits
+Bits.concat  Bits.e      b        = b
+Bits.concat (Bits.o a)   b        = (Bits.o (Bits.concat a b))
+Bits.concat (Bits.i a)   b        = (Bits.i (Bits.concat a b))
+
+
+
+Bits.and (a: Bits) (b: Bits) : Bits
+Bits.and  Bits.e    b        = Bits.e
+Bits.and  a         Bits.e   = Bits.e
+Bits.and (Bits.o a) (Bits.o b) = (Bits.o (Bits.and a b))
+Bits.and (Bits.o a) (Bits.i b) = (Bits.o (Bits.and a b))
+Bits.and (Bits.i a) (Bits.o b) = (Bits.o (Bits.and a b))
+Bits.and (Bits.i a) (Bits.i b) = (Bits.i (Bits.and a b))
+
+Bits.or (a: Bits) (b: Bits) : Bits
+Bits.or (Bits.o a) (Bits.o b) = (Bits.o (Bits.or a b))
+Bits.or (Bits.o a) (Bits.i b) = (Bits.i (Bits.or a b))
+Bits.or (Bits.i a) (Bits.o b) = (Bits.i (Bits.or a b))
+Bits.or (Bits.i a) (Bits.i b) = (Bits.i (Bits.or a b))
+Bits.or  Bits.e    b        = b
+Bits.or  a         Bits.e   = a
+
+Bits.eql (a: Bits)  (b: Bits)  : Bool
+Bits.eql  Bits.e     Bits.e    = Bool.true
+Bits.eql (Bits.o a) (Bits.o b) = Bits.eql a b
+Bits.eql (Bits.o a) (Bits.i b) = Bits.eql a b
+Bits.eql (Bits.i a) (Bits.o b) = Bits.eql a b
+Bits.eql (Bits.i a) (Bits.i b) = Bits.eql a b
+Bits.eql  a          b         = Bool.false
+
+Bits.reverse (b: Bits) : Bits
+Bits.reverse  b        = Bits.reverse.go b (Bits.e)
+
+Bits.reverse.go (b: Bits) (acum: Bits) : Bits
+Bits.reverse.go (Bits.e)   acum        = acum
+Bits.reverse.go (Bits.o b) acum        = (Bits.reverse.go b (Bits.o (acum)))
+Bits.reverse.go (Bits.i b) acum        = (Bits.reverse.go b (Bits.i (acum)))
+
+Bits.add (a: Bits)  (b: Bits)  : Bits
+Bits.add (Bits.e)    b         = b
+Bits.add  a         (Bits.e)   = a
+Bits.add (Bits.o a) (Bits.o b) = (Bits.o (Bits.add a b))
+// Bits.add (Bits.o a) (Bits.i b) = (Bits.i (Bits.add a b))
+// Bits.add (Bits.i a) (Bits.o b) = (Bits.i (Bits.add a b))
+Bits.add (Bits.i a) (Bits.i b) = (Bits.o (Bits.add (Bits.add a (Bits.i Bits.e)) b))
+Bits.add  a          b         = (Bits.i (Bits.add (Bits.tail (a)) (Bits.tail (b))))
+
+Bits.mul (a: Bits) (b: Bits) : Bits
+Bits.mul a b = Bits.mul.go a b Bits.e
+
+Bits.mul.go (a: Bits) (b: Bits)  (acum: Bits) : Bits
+Bits.mul.go  a          Bits.e    acum        = acum
+Bits.mul.go  a         (Bits.o b) acum        = Bits.mul.go (Bits.o a) b acum
+Bits.mul.go  a         (Bits.i b) acum        = Bits.mul.go (Bits.o a) b (Bits.add a acum)
+// Bits.mul.go Bits.e     b          acum        = acum
+// Bits.mul.go (Bits.o a) b          acum        = Bits.mul.go a b (Bits.o (acum))
+// Bits.mul.go (Bits.i a) (Bits.i b) acum        = Bits.mul.go a (Bits.i b) (Bits.add (Bits.i b) acum)
+// Bits.mul.go (Bits.i a) (Bits.o b) acum        = Bits.mul.go a (Bits.o b) (Bits.o (acum))
+
+Bits.length (a: Bits) : Nat
+Bits.length a = Bits.length.go a Nat.zero
+
+Bits.length.go (a: Bits) (acum: Nat) : Nat
+Bits.length.go Bits.e acum = acum
+Bits.length.go (Bits.o a) acum = Bits.length.go a (Nat.succ acum)
+Bits.length.go (Bits.i a) acum = Bits.length.go a (Nat.succ acum)
+
+Bits.drop (n: Nat) (bs: Bits) : Bits
+Bits.drop Nat.zero bs = bs
+Bits.drop (Nat.succ n) bs = (Bits.drop n (Bits.tail (bs)))
+
+Bits.take (n: Nat) (bs: Bits) : Bits
+Bits.take Nat.zero bs = Bits.e
+Bits.take (Nat.succ a) Bits.e = Bits.e
+Bits.take (Nat.succ a) (Bits.o bs) = (Bits.o (Bits.take a bs))
+Bits.take (Nat.succ a) (Bits.i bs) = (Bits.i (Bits.take a bs))
+
+Main {
+ let n = Nat.succ Nat.zero
+ let nn = Nat.succ (Nat.succ Nat.zero) 
+ let nnn = Nat.succ (Nat.succ (Nat.succ Nat.zero))
+ let nnnn = Nat.succ (Nat.succ (Nat.succ (Nat.succ Nat.zero)))  
+ let a = Bits.i(Bits.i(Bits.e)) // 3
+ let b = Bits.o(Bits.i(Bits.i(Bits.e))) // 6
+ let c = Bits.o(Bits.o(Bits.i(Bits.i(Bits.e)))) // 12
+ let d = Bits.i(Bits.i(Bits.i(Bits.i(Bits.e)))) // 15
+ Bits.add c a
+}

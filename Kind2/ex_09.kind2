@@ -1,0 +1,111 @@
+Maybe <a: Type>           : Type
+Maybe.none <a>            : Maybe a
+Maybe.some <a> (value: a) : Maybe a
+
+List <a: Type>                          : Type
+List.nil <a>                            : List a
+List.cons <a> (head: a) (tail: List a)  : List a
+
+Pair     (a: Type) (b: Type)             : Type
+Pair.new <a>       <b> (fst: a) (snd: b) : (Pair a b) 
+
+Nat                     : Type
+Nat.zero                : Nat
+Nat.succ (pred: Nat)    : Nat
+
+Bool       : Type
+Bool.true  : Bool
+Bool.false : Bool
+
+Nat.ltn (a: Nat) (b: Nat) : Bool
+Nat.ltn (Nat.succ a) (Nat.succ b) = (Nat.ltn a b)
+Nat.ltn Nat.zero      b           = Bool.true
+Nat.ltn a             Nat.zero    = Bool.false 
+
+Bool.if <r: Type> (b: Bool)  (if_t: r) (if_f: r) : r
+Bool.if r         Bool.true   if_t      if_f     = if_t
+Bool.if r         Bool.false  if_t      if_f     = if_f
+
+Maybe.to_nat (a: Maybe (Nat)) : Nat
+Maybe.to_nat (Maybe.none t) = Nat.zero
+Maybe.to_nat (Maybe.some t a) = a
+
+List.head <a: Type> (xs: List a) : Maybe a
+List.head a (List.nil t) = Maybe.none
+List.head a (List.cons t head tail) = Maybe.some head
+
+List.tail <a: Type> (xs: List a) : List a
+List.tail a (List.nil t) = List.nil
+List.tail a (List.cons t head tail) = tail
+
+List.concat <a: Type> (xs: List a) (ys: List a) : List a
+List.concat a (List.nil t) (List.nil t_) = List.nil
+List.concat a (List.nil t) ys = ys
+List.concat a (List.cons t head tail) ys = (List.cons a head (List.concat a tail ys)) 
+
+//-----------------------------
+// Returns pairs of the elements of the 2 input lists on the same index
+// Ex: zip!!([1,2], ["a","b","c"]) == [{1, "a"}, {2 , "b"}]
+// Ex: zip!!(["a", "b"], [3, 5])   == [{"a", 3}, {2 , "b"}]
+
+
+List.zip <a: Type> <b: Type> (xs: List a) (ys: List b) : List (Pair a b)
+List.zip a b (List.cons a_ ahead atail) (List.cons b_ bhead btail) = (List.cons (Pair.new ahead bhead) (List.zip atail btail))
+List.zip a b xs ys = List.nil
+
+List.smallest (xs: List(Nat)) : Maybe(Nat)
+List.smallest (List.nil t) = Maybe.none
+List.smallest (List.cons t head (List.nil t_)) = Maybe.some head
+List.smallest (List.cons t head tail) = 
+    if (Nat.ltn head (Maybe.to_nat (List.head tail))) 
+        { List.smallest (List.cons head (List.tail tail)) }
+     else   
+        { List.smallest tail } 
+
+
+List.delete_smallest (xs: List (Nat)) : List (Nat)
+List.delete_smallest (List.nil t) = List.nil
+List.delete_smallest (List.cons t head (List.nil t_)) = List.nil
+List.delete_smallest (List.cons t head tail) = 
+    if (Nat.ltn head (Maybe.to_nat (List.smallest tail)))
+      { tail }
+     else
+      { List.cons head (List.delete_smallest tail) }
+
+List.sort_ascending (xs: List(Nat)) : List (Nat)
+List.sort_ascending (List.nil t) = List.nil
+List.sort_ascending (List.cons t head (List.nil t_)) = (List.cons head (List.nil t_))
+List.sort_ascending (List.cons t head tail) = 
+  if (Nat.ltn head (Maybe.to_nat (List.smallest tail)))
+    { List.cons head (List.sort_ascending tail) }
+   else
+    { List.sort_ascending (List.cons (Maybe.to_nat (List.head tail)) (List.concat (List.tail tail) (List.cons head (List.nil)))) }
+
+
+List.get <a: Type> (idx: Nat) (xs: List a) : Maybe a
+List.get a idx (List.nil t) = Maybe.none
+List.get a (Nat.zero) (List.cons t head tail) = Maybe.some head
+List.get a (Nat.succ idx) (List.cons t head tail) = List.get (idx) (tail)
+
+List.filter <a: Type> (fn: a -> Bool) (xs: List a) : List a
+List.filter a fn (List.nil t) = List.nil
+List.filter a fn (List.cons t head tail) = 
+  if (fn (head))
+    { List.cons head (List.filter fn tail) }
+   else
+    { List.filter fn tail } 
+
+
+Main {
+  let a = List.cons (Nat.succ Nat.zero) (List.cons (Nat.zero) (List.cons (Nat.succ (Nat.succ Nat.zero)) List.nil))
+  let aa = List.cons (Nat.succ Nat.zero) (List.cons (Nat.succ (Nat.succ Nat.zero)) (List.cons (Nat.succ (Nat.succ Nat.zero)) List.nil))
+  let b = List.cons (Bool.true) (List.cons (Bool.false) (List.cons (Bool.true) List.nil ))
+  let n = Nat.succ Nat.zero
+  let n3 = (Nat.succ (Nat.succ (Nat.succ Nat.zero)))
+  let n7 = (Nat.succ (Nat.succ (Nat.succ (Nat.succ (Nat.succ (Nat.succ (Nat.succ Nat.zero)))))))
+  let n2 = (Nat.succ (Nat.succ Nat.zero))
+  let n4 = (Nat.succ (Nat.succ (Nat.succ (Nat.succ Nat.zero))))
+  let test = List.cons n3 (List.cons n7 (List.cons n2 (List.cons n4 List.nil)))
+  let c = List.nil
+  List.get n test
+  }
