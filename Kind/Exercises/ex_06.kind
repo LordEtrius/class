@@ -70,6 +70,14 @@ pos_show(n: Pos): String
 neg_show(n: Neg): String
   "-"|Nat.show(neg_to_nat(n))
 
+// Convert Inte to Nat
+inte_to_nat(n: Inte): Nat
+   case n {
+	neg: neg_to_nat(n.num)
+	pos: pos_to_nat(n.num)
+}
+
+
 // Converts Int to String
 inte_show(n: Inte): String
   case n {
@@ -98,43 +106,168 @@ int(sign: Bool, num: Nat): Inte
 // int(false, 2)     = -1
 // int(true,  2)     = +3
 inc(a: Inte): Inte  
-  ?inc
+  case a {
+	neg: case a.num {
+		one:  Inte.pos(Pos.zero)
+		pred: Inte.neg(a.num.succ)
+	}
+	pos: Inte.pos(Pos.succ(a.num))
+}
 
 // Decrements an Integer
 // int(false, 1) = -2
 // int(true,  2) = +1
 // int(true,  0) = -1
 dec(a: Inte): Inte
-  ?dec
+  case a {
+	neg: Inte.neg(Neg.pred(a.num))
+	pos: case a.num {
+		zero: Inte.neg(Neg.one)
+		succ: Inte.pos(a.num.pred)
+	}
+}
 
 // Doubles an Integer
 // int(false, 4) = -8
 // int(false, 1) = -2
 // int(true,  2) = +4
+// Refazendo todos ex agora q eu entedi melhor a sintaxe
 dbl(a: Inte): Inte 
-  ?dbl
+	add(a, a)
+
+//   case a {
+// 	neg: dec(dec(dbl(inc(a))))
+// 	pos: case a.num {
+// 		zero: Inte.pos(Pos.zero)
+// 		succ: inc(inc(dbl(dec(a))))
+// 	}
+// }
 
 // Adds two Integers
 // int(false, 4) + int(false, 2) = -6
 // int(false, 4) + int(true,  2) = -2
 add(a: Inte, b: Inte): Inte
-  ?add
+	case a {
+		neg: case a.num {
+			one: dec(b)
+			pred: add(inc(a), dec(b))
+		}
+		pos: case a.num {
+			zero: b
+			succ: add(dec(a), inc(b))
+		}
+	}
+
+
+//    case a {
+//  	neg: case a.num {
+//  		one:  dec(b)
+//  		pred: dec(add(Inte.neg(a.num.succ), b))
+//  		}	 
+//  	pos: case a.num {
+//  		zero: b
+//  		succ: inc(add(Inte.pos(a.num.pred), b))
+//  		}
+//  }
 
 // Multiplies two Integers
 // int(false, 2) * int(true, 3)  = -6
-// int(false, 4) * int(false, 5) = +20
+// int(false, 4) * int(false, 5) s +20
 mul(a: Inte, b: Inte): Inte
-  ?mul
+	mul_go(a, b, Inte.pos(Pos.zero))
+
+mul_go(a: Inte, b: Inte, acum: Inte): Inte
+	case a b {
+		neg neg: case a.num {
+			one: int(Bool.true, inte_to_nat(add(b, acum)))
+			pred: mul_go(inc(a), b, add(b, acum))
+		}
+		neg pos: case b.num {
+			zero: acum
+			succ: mul_go(a, dec(b), add(a, acum))
+		}
+		pos neg: case a.num {
+			zero: acum
+			succ: mul_go(dec(a), b, add(b, acum))
+		}
+		pos pos: case a.num {
+			zero: acum
+			succ: mul_go(dec(a), b, add(b, acum))
+		}
+	}
+//   let anat = inte_to_nat(a)
+//   let bnat = inte_to_nat(b)
+//   case a b {
+// 	pos pos: case a.num b.num {
+// 		zero zero: Inte.pos(Pos.zero)
+// 		zero succ: Inte.pos(Pos.zero)
+// 		succ zero: Inte.pos(Pos.zero)
+// 		succ succ: 
+// 			let multi = Nat.mul(anat, bnat)
+// 			int(Bool.true, multi)
+// 		}
+// 	neg neg: 
+// 		let multi = Nat.mul(anat, bnat)
+// 		int(Bool.true, multi)
+// 	neg pos: case b.num {
+// 		zero: Inte.pos(Pos.zero)
+// 		succ: 
+// 		   let multi = Nat.mul(anat, bnat)
+// 		   int(Bool.false, multi)
+// 		}
+// 	pos neg: case a.num{
+// 		zero: Inte.pos(Pos.zero)
+// 		succ: 
+// 		   let multi = Nat.mul(anat, bnat)
+// 		   int(Bool.false, multi)
+// 		}
+// }
 
 // Subtracts two Integers
 // int(false, 6) - int(false, 6) = +0
 // int(false, 4) - int(false, 6) = +2
 sub(a: Inte, b: Inte): Inte
-  ?sub
+	case b {
+		neg: add(a, int(Bool.true, inte_to_nat(b)))
+		pos: add(a, int(Bool.false, inte_to_nat(b)))
+	}
+	
+//   let anat = inte_to_nat(a)
+//   let bnat = inte_to_nat(b)
+//   case a b {
+// 	pos pos: case a.num b.num {
+// 		zero zero: Inte.pos(Pos.zero) 
+// 		zero succ: int(Bool.false, bnat)
+// 		succ zero: a
+// 		succ succ: sub(Inte.pos(a.num.pred), Inte.pos(b.num.pred))
+// 		}
+// 	pos neg: int(Bool.true, Nat.add(anat, bnat))
+// 	neg pos: case a.num b.num {
+// 		one zero:  a
+// 		one succ:  dec(b) 
+// 		pred zero: a
+// 		pred succ: int(Bool.false, Nat.add(anat, bnat))
+// 		}
+// 	neg neg: case a.num b.num {
+// 		one one:  Inte.pos(Pos.zero)
+// 		one pred: int(Bool.true, Nat.sub(bnat, Nat.succ(Nat.zero)))
+// 		pred one: inc(a)
+// 		pred pred: sub(Inte.neg(a.num.succ), Inte.neg(b.num.succ))
+// 		}
+// }
 
 // Equal
 eql(a: Inte, b: Inte): Bool // Given two Integers, returns true if both are the same and false otherwise.
-  ?eql
+  case a b {
+	neg neg: case a.num b.num {
+		one one:   Bool.true 
+		pred pred: eql(Inte.neg(a.num.succ), Inte.neg(b.num.succ))
+		} default Bool.false
+	pos pos: case a.num b.num {
+		zero zero: Bool.true
+		succ succ: eql(Inte.pos(a.num.pred), Inte.pos(b.num.pred))
+		} default Bool.false
+} default Bool.false
 
 
 // Greater than
@@ -143,33 +276,100 @@ eql(a: Inte, b: Inte): Bool // Given two Integers, returns true if both are the 
 // int(false, 2) > int(true,  0) = False
 // int(true,  0) > int(false, 2) = True
 gtn(a: Inte, b: Inte): Bool // if A > B then True else false
-  ?gtn
+  case a b {
+	neg neg: case a.num b.num {
+		one one:   Bool.false
+		one pred:  Bool.true
+		pred one:  Bool.false
+		pred pred: gtn(inc(a), inc(b))
+		}
+	pos neg: Bool.true
+	neg pos: Bool.false
+	pos pos: case a.num b.num {
+		zero zero: Bool.false
+		zero succ: Bool.false
+		succ zero: Bool.true
+		succ succ: gtn(dec(a), dec(b))
+		}
+}
 
 // Lower than
 // int(false, 1) < int(true,  0) = True
 // int(true,  0) < int(false, 1) = False
 ltn(a: Inte, b: Inte): Bool // if A > B then False else true
-  ?ltn
+  case a b {
+	neg neg: case a.num b.num {
+		one one: Bool.false
+		one pred: Bool.false
+		pred one: Bool.true
+		pred pred: ltn(inc(a), inc(b))
+		}
+	neg pos: Bool.true
+	pos neg: Bool.false
+	pos pos: case a.num b.num {
+		zero zero: Bool.false
+		zero succ: Bool.true
+		succ zero: Bool.false
+		succ succ: ltn(dec(a), dec(b))
+		}
+}
 
 // Minimum
 // min(int(false, 1), int(true,  0)  = -1
 // min(int(false, 1), int(false, 3)) = -3
 min(a: Inte, b: Inte): Inte // if A < B then A else B
-  ?min
+  case a b {
+	neg neg: case ltn(a, b) {
+		true:  a
+		false: b
+		}
+	neg pos: a
+	pos neg: b
+	pos pos: case ltn(a, b) {
+		true:  a
+		false: b
+		}
+}
 
 // Maximum
 // max(int(false, 1), int(true,  0)) = +0
 // max(int(false, 1), int(false, 3)) = -1
 max(a: Inte, b: Inte): Inte // if A > B then A else B
-  ?max
+  case a b {
+	neg neg: case gtn(a, b) {
+		true:  a
+		false: b
+		}
+	neg pos: b
+	pos neg: a
+	pos pos: case gtn(a, b) {
+		true:  a
+		false: b
+		}
+}
 
 // Half
 // Divides an Integer by two
 // int(false, 4) = -2
 // int(false, 1) = +0
 // int(true,  6) = +3
+// half(n: Nat): Nat
+//   case n {
+// 	zero: Nat.zero
+// 	succ: case n.pred {
+// 		zero: Nat.zero
+// 		succ: Nat.succ(half(subnat(n.pred, Nat.succ(Nat.zero))))
+// 		}
+// }
+
 hlf(a: Inte): Inte
-  ?hlf
+	 case a {
+		pos: case a.num{
+			zero: Inte.pos(Pos.zero)
+			succ: div(a, Inte.pos(Pos.succ(Pos.succ(Pos.zero))))
+		}
+		neg: div(a, Inte.pos(Pos.succ(Pos.succ(Pos.zero))))
+	 }
 
 // Division
 // int(true,  2)  / int(true,  2)  = +1
@@ -177,7 +377,77 @@ hlf(a: Inte): Inte
 // int(false, 11) / int(false, 5)  = +2
 // int(true,  10) / int(false, 12) = +0
 div(a: Inte, b: Inte): Inte 
-  ?div
+	div_go(a, b, Inte.pos(Pos.zero))
+
+div_go(a: Inte, b: Inte, acum: Inte): Inte
+	let anat = inte_to_nat(a)
+	let bnat = inte_to_nat(b)
+	case a b {
+		neg neg: case ltn(a, Inte.pos(Pos.zero)) {
+			true: case ltn(a, b) {
+				true: div_go(sub(a, b), b, inc(acum))
+				false: case eql(a, b) {
+					true: inc(acum)
+					false: acum
+				}
+			}
+			false: acum
+		}
+		neg pos: case ltn(a, Inte.pos(Pos.zero)) {
+			true:  case gtn(int(Bool.true, anat), b) {
+				true:  div_go(add(a, b), b, dec(acum))
+				false: case eql(int(Bool.true, anat), b) {
+					true: dec(acum)
+					false: acum
+				}
+			}
+			false: acum
+		}
+		pos neg: case ltn(a, Inte.pos(Pos.zero)) {
+			true: acum
+			false: case gtn(a, int(Bool.true, bnat)) {
+				true: div_go(add(a, b), b, dec(acum))
+				false: case eql(a, int(Bool.true, bnat)) {
+					true: dec(acum)
+					false: acum
+				}
+			}
+		}
+		pos pos: case b.num {
+			zero: Inte.pos(Pos.zero)
+			succ: case gtn(a, b) {
+				true: div_go(sub(a, b), b, inc(acum))
+				false: case eql(a, b) {
+					true:  inc(acum)
+					false: acum
+				}
+			}
+		}
+	}
+
+//   let anat = inte_to_nat(a)
+//   let bnat = inte_to_nat(b)
+//   case a b {
+// 	neg neg: case a.num b.num {
+// 		one one: Inte.pos(Pos.succ(Pos.zero))
+// 		one pred: Inte.pos(Pos.zero)
+// 		pred one: int(Bool.true, anat)
+// 		pred pred: int(Bool.true, Nat.div(anat, bnat))
+// 		}
+// 	neg pos: case a.num b.num {
+// 		one zero:  Inte.pos(Pos.zero)
+// 		one succ:  Inte.pos(Pos.zero)
+// 		pred zero: Inte.pos(Pos.zero)
+// 		pred succ: int(Bool.false, Nat.div(anat, bnat))
+// 		}
+// 	pos neg: case a.num b.num {
+// 		zero one:  Inte.pos(Pos.zero)
+// 		zero pred: Inte.pos(Pos.zero) 
+// 		succ one:  int(Bool.false, anat)
+// 		succ pred: int(Bool.false, Nat.div(anat, bnat))
+// 		}
+// 	pos pos: int(Bool.true, Nat.div(anat,bnat))
+// }
 
 ex_06: IO<Unit>
   IO {
