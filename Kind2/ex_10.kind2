@@ -1,0 +1,252 @@
+Char : Type
+Char = U60
+
+U60.greater_equal (a: U60) (b: U60) : Bool {
+  U60.to_bool (>= a b)
+}
+
+U60.less_equal (a: U60) (b: U60) : Bool {
+  U60.to_bool (<= a b)
+}
+
+U60.equal (a: U60) (b: U60) : Bool {
+  U60.to_bool (== a b)
+}
+
+U60.add (a: U60) (b: U60) : U60 {
+  (+ a b)
+}
+
+U60.sub (a: U60) (b: U60) : U60 {
+  (- a b)
+}
+
+U60.to_bool (n: U60) : Bool
+U60.to_bool 0 = Bool.false
+U60.to_bool n = Bool.true
+
+U60.to_nat (x: U60) : Nat
+U60.to_nat 0 = Nat.zero
+U60.to_nat n = Nat.succ (U60.to_nat (- n 1))
+
+U60.to_bits (n: U60) : Bits {
+  U60.to_bits.go n 60 Bits.e
+}
+
+U60.to_bits.go (n: U60) (c: U60) (r: Bits) : Bits
+U60.to_bits.go n 0 r = r
+U60.to_bits.go n c r =
+  let bit = U60.is_bit_set n 59
+  let r   = if bit { Bits.i r } else { Bits.o r }
+  U60.to_bits.go (<< n 1) (- c 1) r
+
+U60.is_bit_set (n: U60) (bit: U60) : Bool {
+  U60.to_bool (U60.get_bit n bit)
+}
+
+U60.get_bit (n: U60) (bit: U60) : U60 {
+  (& (>> n bit) 1)
+}
+
+Bits: Type
+Bits.e : Bits
+Bits.o (pred: Bits) : Bits
+Bits.i (pred: Bits) : Bits
+
+Bits.concat (a: Bits) (b: Bits) : Bits
+Bits.concat (Bits.e)        (b) = (b)
+Bits.concat (Bits.o a.pred) (b) = (Bits.o (Bits.concat a.pred b))
+Bits.concat (Bits.i a.pred) (b) = (Bits.i (Bits.concat a.pred b))
+
+Nat                     : Type
+Nat.zero                : Nat
+Nat.succ (pred: Nat)    : Nat
+
+// Subtraction
+Nat.sub (a: Nat) (b: Nat)         : Nat
+Nat.sub Nat.zero  b               = Nat.zero
+Nat.sub a         Nat.zero        = a
+Nat.sub (Nat.succ a) (Nat.succ b) = (Nat.sub a b)
+
+Maybe <a: Type>           : Type
+Maybe.none <a>            : Maybe a
+Maybe.some <a> (value: a) : Maybe a
+
+Bool       : Type
+Bool.true  : Bool
+Bool.false : Bool
+
+Bool.if <r: Type> (b: Bool)  (if_t: r) (if_f: r) : r
+Bool.if r         Bool.true   if_t      if_f     = if_t
+Bool.if r         Bool.false  if_t      if_f     = if_f
+
+List <a: Type> : Type
+List.nil <a> : List a
+List.cons <a> (head: a) (tail: List a) : List a
+
+List.head <a: Type> (xs: List a) : Maybe a
+List.head a (List.nil t) = Maybe.none
+List.head a (List.cons t head tail) = Maybe.some head
+
+List.tail <a: Type> (xs: List a) : List a
+List.tail a (List.nil t) = List.nil
+List.tail a (List.cons t head tail) = tail 
+
+
+
+Char.is_upper (x: Char) : Bool
+Char.is_upper x = if (U60.greater_equal x 'A') 
+    { if (U60.less_equal x 'Z') { Bool.true } else { Bool.false } } 
+   else 
+    { Bool.false }
+
+Char.is_lower (x: Char) : Bool
+Char.is_lower x = if (U60.greater_equal x 'a')
+    { if (U60.less_equal x 'z') { Bool.true } else { Bool.false } }
+   else
+    { Bool.false }
+
+Char.is_digit (x : Char) : Bool
+Char.is_digit x = if (U60.greater_equal x '0' )
+    { if (U60.less_equal x '9') { Bool.true } else { Bool.false } }
+   else 
+    { Bool.false }
+
+Char.equal (x: Char) (y: Char) : Bool
+Char.equal x y = U60.equal x y
+
+Char.to_digit (x: Char) : Nat
+Char.to_digit x = if (Char.is_digit x) 
+    { U60.to_nat (U60.sub x 48) }
+   else
+    { Nat.zero }
+
+Char.to_lower (x: Char) : Char
+Char.to_lower x = if (Char.is_upper x)
+    { (+ x 32) }
+   else
+    { x }
+
+Char.to_upper (x: Char) : Char {
+  if (Char.is_lower x) 
+    { (- x 32) }
+   else
+    { x } 
+}
+
+String : Type
+String.nil : String
+String.cons (head: Char) (tail: String) : String
+
+String.head (xs: String) : Char
+String.head String.nil = 0
+String.head (String.cons head tail) = head
+
+String.tail (xs: String) : String
+String.tail String.nil = String.nil
+String.tail (String.cons head tail) = tail
+
+String.concat (xs: String) (ys: String) : String
+String.concat String.nil ys = ys
+String.concat (String.cons head tail) ys = String.cons (head) (String.concat tail ys)
+
+String.map (fn: Char -> Char) (xs: String) : String
+String.map fn String.nil = String.nil
+String.map fn (String.cons head tail) = String.cons (fn head) (String.map fn tail)
+
+String.to_upper (xs: String) : String
+String.to_upper String.nil = String.nil
+String.to_upper (String.cons head tail) = if (Char.is_upper head)
+    { String.cons head (String.to_upper tail) }
+   else
+    { String.cons (Char.to_upper head) (String.to_upper tail) }
+
+String.to_bits (xs: String) : Bits
+String.to_bits String.nil = Bits.e
+String.to_bits (String.cons head tail) = Bits.concat (U60.to_bits head) (String.to_bits tail)
+
+String.equal (xs: String) (ys: String) : Bool
+String.equal (String.cons xs.head (String.nil)) (String.cons ys.head (String.nil)) = 
+    if (Char.equal xs.head ys.head) { Bool.true } else { Bool.false }
+String.equal (String.cons xs.head xs.tail) (String.cons ys.head ys.tail) = 
+    if (Char.equal xs.head ys.head) 
+        {String.equal xs.tail ys.tail}
+       else 
+        { Bool.false }
+String.equal xs ys = Bool.false        
+
+String.is_nat (xs: String) : Bool
+String.is_nat String.nil = Bool.false
+String.is_nat (String.cons head (String.nil)) = 
+    if (Char.is_digit head)
+        { Bool.true }
+       else
+        { Bool.false } 
+String.is_nat (String.cons head tail) = 
+    if (Char.is_digit head)
+        { String.is_nat tail }
+       else
+        { Bool.false } 
+
+String.take_while (cond: Char -> Bool) (xs: String) : String
+String.take_while cond String.nil = String.nil
+String.take_while cond (String.cons head tail) = 
+  if (cond (head)) { String.cons head (String.take_while cond tail) }
+    else
+    { String.nil }
+
+String.find (xs: String) (x: Char) : Maybe Nat {
+  String.find.go xs x Nat.zero
+}
+
+String.find.go (xs: String) (x: Char) (nro: Nat) : Maybe Nat
+String.find.go String.nil x nro = Maybe.none
+String.find.go (String.cons head tail) x nro = if (Char.equal head x) 
+  { Maybe.some nro }
+   else
+  { String.find.go tail x (Nat.succ (nro)) }
+
+String.filter (cond: Char -> Bool) (xs: String) : String
+String.filter cond String.nil = String.nil
+String.filter cond (String.cons head tail) = 
+  if (cond head)
+    { String.cons head (String.filter cond tail) }
+     else
+    { String.filter cond tail } 
+
+String.drop (n: Nat) (xs: String) : String
+String.drop Nat.zero xs = xs
+String.drop (Nat.succ n) String.nil = String.nil
+String.drop (Nat.succ n) (String.cons head tail) = String.drop n tail
+
+String.take (n: Nat) (xs: String) : String
+String.take Nat.zero xs = String.nil
+String.take (Nat.succ n) String.nil = String.nil
+String.take (Nat.succ n) (String.cons head tail) = String.cons head (String.take n tail)
+
+String.slice (n: Nat) (x: Nat) (xs: String) : String
+String.slice  n        x        String.nil = String.nil
+String.slice  n        x        xs = String.take (Nat.sub x n) (String.drop n xs)
+
+// String.split (xs: String) (match: String) : List String {
+//  ?
+// }
+
+// String.spligo (xs: String) (match: String) (acum: String) : List String
+// String.spligg String.nil match acum = ?
+
+// String.split.go (xs: String) (match: String) (acum: String) : List 
+// String.split_go String.nil match acum = List.cons acum List.nil
+// String.split_go (String.cons head tail) match acum = ?
+
+Main {
+    let a = Nat.succ Nat.zero
+    let b = (Nat.succ (Nat.succ Nat.zero))
+    let c = (Nat.succ (Nat.succ (Nat.succ Nat.zero)))
+    let d = (Nat.succ (Nat.succ (Nat.succ (Nat.succ Nat.zero))))
+    let aa = "HI"
+    let ab = "Hello"
+    let ac = "text"
+    String.slice a b aa
+    //let a = String.map (x: Char => (Char.to_lower x) ) "AAAddsss"
+}

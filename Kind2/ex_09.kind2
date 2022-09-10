@@ -13,14 +13,14 @@ Nat                     : Type
 Nat.zero                : Nat
 Nat.succ (pred: Nat)    : Nat
 
-Bool       : Type
-Bool.true  : Bool
-Bool.false : Bool
-
 Nat.ltn (a: Nat) (b: Nat) : Bool
 Nat.ltn (Nat.succ a) (Nat.succ b) = (Nat.ltn a b)
 Nat.ltn Nat.zero      b           = Bool.true
 Nat.ltn a             Nat.zero    = Bool.false 
+
+Bool       : Type
+Bool.true  : Bool
+Bool.false : Bool
 
 Bool.if <r: Type> (b: Bool)  (if_t: r) (if_f: r) : r
 Bool.if r         Bool.true   if_t      if_f     = if_t
