@@ -228,16 +228,31 @@ String.slice (n: Nat) (x: Nat) (xs: String) : String
 String.slice  n        x        String.nil = String.nil
 String.slice  n        x        xs = String.take (Nat.sub x n) (String.drop n xs)
 
-// String.split (xs: String) (match: String) : List String {
-//  ?
-// }
+String.split (xs: String) (find: String) : List String
+String.split xs find = String.split.go xs find String.nil
 
-// String.spligo (xs: String) (match: String) (acum: String) : List String
-// String.spligg String.nil match acum = ?
+String.split.go (xs: String) (find: String) (acum: String) : List String
+String.split.go (String.nil) find acum = List.cons acum List.nil
+String.split.go xs find acum = 
+    if String.split.go_find xs find
+      { let sobra = String.drop (String.length_string find Nat.zero) xs
+        List.cons acum (String.split.go sobra find String.nil) }
+      else 
+      { let gravahead = String.cons (String.head xs) String.nil
+        String.split.go (String.tail xs) find (String.concat acum gravahead)  } 
 
-// String.split.go (xs: String) (match: String) (acum: String) : List 
-// String.split_go String.nil match acum = List.cons acum List.nil
-// String.split_go (String.cons head tail) match acum = ?
+String.split.go_find (xs: String) (find: String) : Bool
+String.split.go_find  xs           (String.nil) = Bool.true
+String.split.go_find (String.nil) (String.cons m.head m.tail) = Bool.false
+String.split.go_find (String.cons x.head x.tail) (String.cons m.head m.tail) =
+  if Char.equal (x.head) (m.head)
+    {String.split.go_find x.tail m.tail}
+   else
+    {Bool.false} 
+
+String.length_string (xs: String) (acum: Nat) : Nat
+String.length_string  String.nil   acum       = Nat.zero
+String.length_string (String.cons head tail) acum = String.length_string tail (Nat.succ (acum))
 
 Main {
     let a = Nat.succ Nat.zero
@@ -247,6 +262,6 @@ Main {
     let aa = "HI"
     let ab = "Hello"
     let ac = "text"
-    String.slice a b aa
+    String.slice a c ab
     //let a = String.map (x: Char => (Char.to_lower x) ) "AAAddsss"
 }

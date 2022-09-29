@@ -1,0 +1,105 @@
+Bool       : Type
+Bool.true  : Bool
+Bool.false : Bool
+
+Bool.eql (a: Bool) (b: Bool)   : Bool
+Bool.eql Bool.true  Bool.true  = Bool.true
+Bool.eql Bool.false Bool.false = Bool.true
+Bool.eql a          b          = Bool.false
+
+Bool.if <r: Type> (b: Bool) (if_t: r) (if_f: r) : r
+Bool.if r Bool.true  if_t if_f = if_t
+Bool.if r Bool.false if_t if_f = if_f
+
+Maybe <a: Type> : Type
+Maybe.none <a> : Maybe a
+Maybe.some <a> (value: a) : Maybe a
+
+Char : Type
+Char = U60
+
+String : Type
+String.nil : String
+String.cons (head: Char) (tail: String) : String
+
+String.concat (xs: String) (ys: String) : String
+String.concat String.nil ys = ys
+String.concat (String.cons head tail) ys = String.cons (head) (String.concat tail ys)
+
+
+Pair     (a: Type) (b: Type)             : Type
+Pair.new <a>       <b> (fst: a) (snd: b) : (Pair a b) 
+
+// Returns the first element of a pair
+Pair.first <a: Type> <b: Type> (pair: (Pair a b)) : a
+Pair.first a b (Pair.new pair.a pair.b fst snd) = fst
+
+// Returns the second element of a pair
+Pair.second <a: Type> <b: Type> (pair: (Pair a b)) : b
+Pair.second a b (Pair.new pair.a pair.b fst snd) = snd
+
+Nat                  : Type
+Nat.zero             : Nat
+Nat.succ (pred: Nat) : Nat
+
+// Equal
+Nat.eql (a: Nat)     (b: Nat)     : Bool
+Nat.eql (Nat.succ a) (Nat.succ b) = (Nat.eql a b)
+Nat.eql Nat.zero     Nat.zero     = Bool.true
+Nat.eql Nat.zero     b            = Bool.false
+Nat.eql a            Nat.zero     = Bool.false
+
+ListMap <a: Type> : Type
+ListMap.empty <a> : ListMap a
+ListMap.cons <a> (head: Pair Nat a )  (tail: ListMap a) : ListMap a
+
+
+ListMap.set <a: Type> (key: Nat) (value: a) (lm: ListMap a) : ListMap a
+ListMap.set a key value (ListMap.empty) = ListMap.cons (Pair.new key value) (ListMap.empty)
+ListMap.set a key value (ListMap.cons lm.head lm.tail) = 
+    if (Nat.eql key (Pair.first lm.head))
+        {ListMap.cons (Pair.new key value) lm.tail}
+      else
+        {ListMap.cons lm.head (ListMap.set key value lm.tail)}
+
+ListMap.get <a: Type> (key: Nat) (lm: ListMap a) : Maybe a
+ListMap.get key (ListMap.empty) = Maybe.none
+ListMap.get key (ListMap.cons lm.head lm.tail) = 
+    if (Nat.eql key (Pair.first lm.head))
+        {Maybe.some (Pair.second lm.head)}
+     else
+        {ListMap.get key lm.tail}
+
+ListMap.mut <a: Type> (key: Nat) (fn: a -> a) (lm: ListMap a): ListMap a
+ListMap.mut key fn (ListMap.empty) = ListMap.empty
+ListMap.mut key fn (ListMap.cons lm.head lm.tail) =
+    if (Nat.eql key (Pair.first lm.head))
+        {ListMap.cons (Pair.new (Pair.first lm.head) (fn (Pair.second lm.head))) lm.tail}
+      else
+        {ListMap.cons lm.head (ListMap.mut key fn lm.tail)} 
+
+ListMap.show <a: Type> (fn: a -> String) (lm: ListMap a) : String
+ListMap.show fn (ListMap.empty) = String.nil
+ListMap.show fn (ListMap.cons lm.head lm.tail) = String.concat (fn(Pair.second lm.head)) (ListMap.show fn lm.tail)
+
+ListMap.has <a: Type> (key: Nat) (lm: ListMap a) : Bool
+ListMap.has key (ListMap.empty) = Bool.false
+ListMap.has key (ListMap.cons lm.head lm.tail) = 
+    if (Nat.eql key (Pair.first lm.head))
+        {Bool.true}
+      else
+        {ListMap.has key lm.tail}
+
+ListMap.filter <a: Type> (cond: a -> Bool) (lm: ListMap a) : ListMap a
+ListMap.filter cond (ListMap.empty) = ListMap.empty
+ListMap.filter cond (ListMap.cons lm.head lm.tail) = 
+    if cond (Pair.second lm.head)
+        {ListMap.cons lm.head (ListMap.filter cond lm.tail)}
+      else
+        {ListMap.filter cond lm.tail}
+
+ListMap.map <a: Type> <b: Type> (fn: a -> b) (lm: ListMap a) : ListMap b
+ListMap.map a b fn (ListMap.empty) = ListMap.empty b
+ListMap.map a b fn (ListMap.cons lm.head lm.tail) = 
+  ListMap.cons b (Pair.new Nat b (Pair.first lm.head) (fn (Pair.second lm.head))) (ListMap.map a b fn lm.tail)
+

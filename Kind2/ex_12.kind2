@@ -1,0 +1,171 @@
+Bool       : Type
+Bool.true  : Bool
+Bool.false : Bool
+
+Bool.eql (a: Bool) (b: Bool)   : Bool
+Bool.eql Bool.true  Bool.true  = Bool.true
+Bool.eql Bool.false Bool.false = Bool.true
+Bool.eql a          b          = Bool.false
+
+Bool.if <r: Type> (b: Bool) (if_t: r) (if_f: r) : r
+Bool.if r Bool.true  if_t if_f = if_t
+Bool.if r Bool.false if_t if_f = if_f
+
+Maybe <a: Type> : Type
+Maybe.none <a> : Maybe a
+Maybe.some <a> (value: a) : Maybe a
+
+Bits : Type
+Bits.e : Bits
+Bits.o (pred: Bits) : Bits
+Bits.i (pred: Bits) : Bits
+
+Bits.reverse (b: Bits) : Bits
+Bits.reverse  b        = Bits.reverse.go b (Bits.e)
+
+Bits.reverse.go (b: Bits) (acum: Bits) : Bits
+Bits.reverse.go (Bits.e)   acum        = acum
+Bits.reverse.go (Bits.o b) acum        = (Bits.reverse.go b (Bits.o (acum)))
+Bits.reverse.go (Bits.i b) acum        = (Bits.reverse.go b (Bits.i (acum)))
+
+//Type Natural
+Nat                  : Type
+Nat.zero             : Nat
+Nat.succ (pred: Nat) : Nat
+
+List <a: Type> : Type
+List.nil <a> : List a
+List.cons <a> (head: a) (tail: List a) : List a
+
+//----------------------------------
+BitsMap <a: Type> : Type
+BitsMap.new <a> : BitsMap a
+BitsMap.tie <a> (val: Maybe a) (lft: BitsMap a) (rgt: BitsMap a) : BitsMap a
+
+BitsMap.set <a: Type> (key: Bits) (val: a) (map: BitsMap a) : BitsMap a
+BitsMap.set (Bits.e) val (BitsMap.new) = BitsMap.tie (Maybe.some val) (BitsMap.new) (BitsMap.new)
+BitsMap.set (Bits.e) val (BitsMap.tie v lft rgt) = BitsMap.tie (Maybe.some val) lft rgt
+BitsMap.set (Bits.o k) val (BitsMap.new) = BitsMap.tie (Maybe.none) (BitsMap.set k val BitsMap.new) (BitsMap.new)
+BitsMap.set (Bits.o k) val (BitsMap.tie v lft rgt) = BitsMap.tie v (BitsMap.set k val lft) rgt
+BitsMap.set (Bits.i k) val (BitsMap.new) = BitsMap.tie (Maybe.none) (BitsMap.new) (BitsMap.set k val BitsMap.new)
+BitsMap.set (Bits.i k) val (BitsMap.tie v lft rgt) = BitsMap.tie v lft (BitsMap.set k val rgt)
+
+BitsMap.get <a: Type> (key: Bits) (map: BitsMap a) : Maybe a
+BitsMap.get key (BitsMap.new) = Maybe.none 
+BitsMap.get (Bits.e) (BitsMap.tie val lft rgt) = val
+BitsMap.get (Bits.o k) (BitsMap.tie val lft rgt) = BitsMap.get k lft
+BitsMap.get (Bits.i k) (BitsMap.tie val lft rgt) = BitsMap.get k rgt
+
+BitsMap.mut <a: Type> (key: Bits) (fn: a -> a) (map: BitsMap a) : BitsMap a
+BitsMap.mut Bits.e fn BitsMap.new = BitsMap.tie Maybe.none BitsMap.new BitsMap.new
+BitsMap.mut Bits.e fn (BitsMap.tie (Maybe.none) lft rgt) = BitsMap.tie Maybe.none lft rgt
+BitsMap.mut Bits.e fn (BitsMap.tie (Maybe.some val) lft rgt) = BitsMap.tie (Maybe.some (fn (val))) lft rgt
+BitsMap.mut (Bits.o k) fn (BitsMap.new) = BitsMap.tie Maybe.none (BitsMap.mut k fn BitsMap.new) BitsMap.new
+BitsMap.mut (Bits.o k) fn (BitsMap.tie val lft rgt) = BitsMap.tie val (BitsMap.mut k fn lft) rgt
+BitsMap.mut (Bits.i k) fn (BitsMap.new) = BitsMap.tie Maybe.none BitsMap.new (BitsMap.mut k fn BitsMap.new)
+BitsMap.mut (Bits.i k) fn (BitsMap.tie val lft rgt) = BitsMap.tie val lft (BitsMap.mut k fn rgt)
+
+BitsMap.del <a: Type> (key: Bits) (map: BitsMap a) : BitsMap a
+BitsMap.del Bits.e BitsMap.new = BitsMap.new
+BitsMap.del Bits.e (BitsMap.tie val lft rgt) = BitsMap.tie Maybe.none lft rgt
+BitsMap.del (Bits.o k) (BitsMap.new) = BitsMap.tie Maybe.none (BitsMap.del k BitsMap.new) BitsMap.new
+BitsMap.del (Bits.o k) (BitsMap.tie val lft rgt) = BitsMap.tie val (BitsMap.del k lft) rgt
+BitsMap.del (Bits.i k) (BitsMap.new) = BitsMap.tie Maybe.none BitsMap.new (BitsMap.del k BitsMap.new)
+BitsMap.del (Bits.i k) (BitsMap.tie val lft rgt) = BitsMap.tie val lft (BitsMap.del k rgt)
+
+BitsMap.has <a: Type> (key: Bits) (map: BitsMap a) : Bool
+BitsMap.has Bits.e (BitsMap.tie (Maybe.some val) lft rgt) = Bool.true
+BitsMap.has (Bits.o k) (BitsMap.tie val lft rgt) = BitsMap.has k lft
+BitsMap.has (Bits.i k) (BitsMap.tie val lft rgt) = BitsMap.has k rgt
+BitsMap.has key         map = Bool.false 
+
+
+//Verifies all values of the map and if they don't match the condition gets
+//removed, if the condition is matched, the value and the key are kept
+BitsMap.filter <a: Type> (cond: a -> Bool) (map: BitsMap a) : BitsMap a
+BitsMap.filter cond BitsMap.new = BitsMap.new
+BitsMap.filter cond (BitsMap.tie (Maybe.none) lft rgt) =
+    let l = BitsMap.filter cond lft
+    let r = BitsMap.filter cond rgt
+    BitsMap.tie Maybe.none l r
+BitsMap.filter cond (BitsMap.tie (Maybe.some val) lft rgt) =
+    let v = if (cond val) { Maybe.some val } else { Maybe.none }
+    let l = BitsMap.filter cond lft
+    let r = BitsMap.filter cond rgt
+    BitsMap.tie v l r
+
+BitsMap.map <a: Type> <b: Type> (fn: a -> b) (bitsmap: BitsMap a) : BitsMap b
+BitsMap.map a b fn (BitsMap.new) = BitsMap.new b
+BitsMap.map a b fn (BitsMap.tie (Maybe.none) lft rgt) = 
+    let l = BitsMap.map a b fn lft
+    let r = BitsMap.map a b fn rgt
+    BitsMap.tie b (Maybe.none b) l r
+BitsMap.map a b fn (BitsMap.tie (Maybe.some val) lft rgt) = 
+    let v = Maybe.some b (fn val)
+    let l = BitsMap.map a b fn lft
+    let r = BitsMap.map a b fn rgt
+    BitsMap.tie b v l r
+
+BitsMap.key <a: Type> (map: BitsMap a) : List Bits {
+    BitsMap.key_go map Bits.e List.nil
+}
+
+BitsMap.key_go <a: Type> (map: BitsMap a) (key: Bits) (acum: List Bits) : List Bits
+BitsMap.key_go (BitsMap.new) key acum = acum
+BitsMap.key_go (BitsMap.tie (Maybe.none) lft rgt) key acum = 
+   let acum0 = BitsMap.key_go lft (Bits.o (key)) acum
+   let acum1 = BitsMap.key_go rgt (Bits.i (key)) acum0
+   acum1
+BitsMap.key_go (BitsMap.tie (Maybe.some val) lft rgt) key acum = 
+    let acum0 = List.cons Bits (Bits.reverse key) acum
+    let acum1 = BitsMap.key_go lft (Bits.o (key)) acum0
+    let acum2 = BitsMap.key_go rgt (Bits.i (key)) acum1
+    acum2
+
+BitsMap.union <a: Type> (map: BitsMap a) (map2: BitsMap a) : BitsMap a
+BitsMap.union (BitsMap.new)             map2             = map2
+BitsMap.union map                      (BitsMap.new)     = map
+BitsMap.union (BitsMap.tie (Maybe.none) l r)  (BitsMap.tie val lft rgt) = BitsMap.tie val (BitsMap.union l lft) (BitsMap.union r rgt)
+BitsMap.union (BitsMap.tie v l r)      (BitsMap.tie val lft rgt) = BitsMap.tie v (BitsMap.union l lft) (BitsMap.union r rgt)
+
+Bool.is_true (a: Bool) : Bool
+Bool.is_true a = a
+
+Nat.is_even (n: Nat) : Bool
+Nat.is_even  Nat.zero    = Bool.true
+Nat.is_even (Nat.succ n) = Bool.is_false (Nat.is_even n)
+
+Bool.is_false (a: Bool)  : Bool
+Bool.is_false Bool.true  = Bool.false
+Bool.is_false Bool.false = Bool.true
+
+Main {
+    let a = BitsMap.new Bool
+    let bit = Bits.i (Bits.i (Bits.o (Bits.o Bits.e)))
+    let bit0 = Bits.o Bits.e
+    let bit1 = Bits.i Bits.e
+    let bb = Bits.i (Bits.i Bits.e)
+    let bb1 = Bits.i (Bits.o (Bits.o Bits.e))
+    let n1 = Nat.succ Nat.zero
+    let n2 = Nat.succ (Nat.succ Nat.zero)
+    let n3 = Nat.succ (Nat.succ (Nat.succ Nat.zero))
+    let b = BitsMap.set Nat bit n1 BitsMap.new
+    let c = BitsMap.set Nat bit0 n2 b
+    let d = BitsMap.set Nat bit1 n3 c
+    let b1 = BitsMap.set Nat bb n1 BitsMap.new
+    let c1 = BitsMap.set Nat bb1 n3 b
+    let d1 = BitsMap.set Nat bit1 n2 c    
+    //let aa = (k: Nat) => Nat.is_even k
+    //BitsMap.filter aa d
+   BitsMap.union d d1
+}
+
+
+// (BitsMap.tie (Maybe.none) 
+// (BitsMap.tie (Maybe.some (Nat.succ (Nat.succ (Nat.zero)))) (BitsMap.new) (BitsMap.new)) 
+// (BitsMap.tie (Maybe.some (Nat.succ (Nat.succ (Nat.succ (Nat.zero))))) (BitsMap.new) (BitsMap.new)))
+// (BitsMap.tie (Maybe.none) 
+
+// (BitsMap.tie (Maybe.some (Bool.false)) (BitsMap.new) (BitsMap.tie (Maybe.none) (BitsMap.tie (Maybe.none) (BitsMap.new) (BitsMap.tie (Maybe.some (Bool.true)) (BitsMap.new) (BitsMap.new))) (BitsMap.new))) 
+
+// (BitsMap.tie (Maybe.some (Bool.false)) (BitsMap.new) (BitsMap.new)))
