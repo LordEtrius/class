@@ -45,7 +45,7 @@ Nat.mul (Nat.succ a) (Nat.succ b) = (Nat.add (Nat.mul a (Nat.succ b)) (Nat.succ 
 Nat.fac (a: Nat)            : Nat
 Nat.fac Nat.zero            = Nat.succ Nat.zero
 Nat.fac (Nat.succ Nat.zero) = (Nat.succ Nat.zero)
-Nat.fac (Nat.succ a)        = (Nat.mul (Nat.succ a) a)
+Nat.fac (Nat.succ a)        = (Nat.mul (Nat.fac a) (Nat.succ a))
 
 // Equal
 Nat.eql (a: Nat)     (b: Nat)     : Bool
