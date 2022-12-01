@@ -1,0 +1,344 @@
+// Numero maximo 99
+Csrt.num_max : Nat { (U60.to_nat 99) }
+
+//Estado do jogo com 3 construtores: tabuleiro, numero sortiado e turno
+Csrt.state : Type
+Csrt.state.new (board: Csrt.board) (num: Csrt.tile) (turn: Csrt.state.turn) : Csrt.state
+
+//Declaro o estado inicial do jogo
+Csrt.state.ini : Csrt.state {
+    Csrt.state.new (Csrt.board.ini) (Csrt.tile.empty) (Csrt.state.turn.ini)
+}
+
+//Checa se posicao e valida
+Csrt.state.pos_val (state: Csrt.state)    (pos: Csrt.board.pos) : Bool 
+Csrt.state.pos_val (Csrt.state.new b n t)  pos                  = 
+                let tile = Csrt.board.get b pos
+                Csrt.tile.is_empty tile
+
+//Tamanho do Turno em bits
+Csrt.state.turn.tam : Nat { Nat.succ (Nat.log (Nat.succ (Nat.succ Nat.zero)) (Csrt.board.tiles))}
+
+//Declaro o tipo do turno = Word 5
+Csrt.state.turn : Type { Word(Csrt.state.turn.tam) }
+
+//Estado do turno final
+Csrt.state.turn.end : Csrt.state.turn { Nat.to_word (Csrt.state.turn.tam) (Csrt.board.tiles) }
+
+//Grava estado inicial do turno do jogo = Word 5 ooooe
+Csrt.state.turn.ini : Csrt.state.turn { Word.zero (Csrt.state.turn.tam) }
+
+
+Csrt.state.turn.eql (a: Csrt.state.turn) (b: Csrt.state.turn) : Bool {
+    Word.eql a b
+}
+//State Fim
+
+//Tile = Janela do Tabuleiro
+//Declara o tipo como Word 7
+Csrt.tile : Type { Word(Csrt.tile.tam) }
+
+//Lenght = Tamanho em bits do nro dentro da janela = 7 > maior nro 99
+Csrt.tile.tam : Nat { Nat.succ (Nat.log (U60.to_nat 2) (Csrt.num_max)) }
+
+//Tile vazio = Word 7 oooooooe
+Csrt.tile.empty : Csrt.tile { Nat.to_word (Csrt.tile.tam) (Nat.zero) }
+
+//Tile show -> transforma o Word 7 zero em "---" ou Word 7 em Numero
+Csrt.tile.show (tile: Csrt.tile) : String {
+    if (Csrt.tile.is_empty tile) 
+        { "---" } 
+    else 
+        { String.pad_left (U60.to_nat 3) (' ') (Word.show tile) }
+}
+
+//Tile is_empty Verifica se o tile e' um Word.zero -> Bool
+Csrt.tile.is_empty (tile: Csrt.tile) : Bool {
+    Word.is_zero tile
+}
+
+//Tile Fim
+
+//Board = Tabileiro
+//Nro de linhas
+Csrt.board.lin : Nat { (U60.to_nat 5) }
+
+//Nro de casas (Janelas)
+Csrt.board.tiles : Nat { Nat.mul (Csrt.board.lin) (Csrt.board.lin) }
+
+//Lenght - Tamanho bits do board
+Csrt.board.tam : Nat { Nat.mul (Csrt.board.tiles) (Csrt.tile.tam) }
+
+//Declaro estado inicial do tabuleiro
+Csrt.board.ini : Csrt.board { Word.zero (Csrt.board.tam) }
+
+//Declara o tipo do tabuleiro
+Csrt.board : Type { Word(Csrt.board.tam) }
+
+//Get - Pega um tile de um tabuleiro enviando sua posicao
+Csrt.board.get (board: Csrt.board) (pos: Csrt.board.pos) : Csrt.tile
+Csrt.board.get  board              (Pair.new fst snd) = 
+        let start_tile = Nat.add (Nat.mul (Csrt.board.lin) (snd)) (fst)
+        let start_bit  = Nat.mul (start_tile) (Csrt.tile.tam)
+        let board_bits = Word.to_bits board
+        let board_tail = Bits.drop (start_bit) (board_bits)
+        let tile       = Bits.take (Csrt.tile.tam) (board_tail)
+        Word.from_bits (Csrt.tile.tam) (tile)
+
+//Set - Grava um estado do jogo
+Csrt.board.set (board: Csrt.board) (pos: Csrt.board.pos) (val: Csrt.tile) : Csrt.board
+Csrt.board.set  board              (Pair.new fst snd)    val              =
+        let start_tile = (Nat.add (Nat.mul (Csrt.board.lin) (snd)) (fst))
+        let start_bit  = Nat.mul start_tile Csrt.tile.tam
+        let board_b    = Word.to_bits board
+        let tile_b     = Word.to_bits val
+        let start_i    = Bits.split start_bit board_b
+        let start      = Pair.fst start_i
+        let aux        = Pair.snd start_i
+        let old_end    = Bits.split Csrt.tile.tam aux
+        let end        = Pair.snd old_end
+        let new_board  = Bits.concat start (Bits.concat tile_b end)
+        Word.from_bits Csrt.board.tam new_board
+
+Csrt.board.show_line (board: Csrt.board) (idx_lin: Nat) : String {
+    let line = Csrt.board.get_lin board idx_lin
+    let fun  = x => Csrt.tile.show x
+    let srt_lin = List.map line fun
+    String.intercalate (" | ") (srt_lin) 
+}
+
+//Mostra a tela com todos os 25 tiles do jogo
+Csrt.board.show (board: Csrt.board) : String {
+    let get_line   = (k: Nat) => (y: String) => (String.concat y (String.concat (Char.to_string 10) (Csrt.board.show_line board k)))
+    Nat.for ("") (Nat.zero) (Csrt.board.lin) (get_line)
+}
+
+//Devolve uma lista contendo os 5 Tiles de uma linha
+Csrt.board.get_lin (board: Csrt.board) (idx_lin: Nat) : List Csrt.tile {
+    let state = (r: List Csrt.tile) => r
+    let func  = 
+            (i: Nat) => (f: (List Csrt.tile) -> (List Csrt.tile)) => 
+            Csrt.board.get_lin_aux board idx_lin i f
+    let for   = Nat.for (state) (Nat.zero) (Csrt.board.lin) (func) 
+    for []
+}
+
+Csrt.board.get_lin_aux (board: Csrt.board) (idx_lin: Nat) (idx_col: Nat) (f: (List Csrt.tile) -> (List Csrt.tile)) : (List Csrt.tile) -> (List Csrt.tile) {
+    (row: List Csrt.tile) =>
+        //let idx  = Nat.add (Nat.mul idx_lin Csrt.board.lin) idx_col //(U60.to_nat (+ (* idx_lin Csrt.board.lin) idx_col))
+        let elem = Csrt.board.get board (Pair.new idx_lin idx_col)  //Maybe.default (List.at board idx) 0
+        let list = List.cons elem row
+        f list 
+}
+
+//Devolve uma lista contendo os 5 tiles de uma coluna
+Csrt.board.get_col (board: Csrt.board) (idx_col: Nat) : List Csrt.tile {
+    let state = (r: List Csrt.tile) => r
+    let get_lin = (i: Nat) => (f: (List Csrt.tile) -> (List Csrt.tile)) =>
+            Csrt.board.get_lin_aux board i idx_col f
+    let for = Nat.for (state) (Nat.zero) (Csrt.board.lin) (get_lin)
+    for []      
+}
+
+//Soma os pontos ao final da partida
+Csrt.board.sum_points (board: Csrt.board) : Nat {
+    let lam     = board => k => Csrt.board.get_lin board k
+    let add_lin = k => y => Csrt.board.sum_aux board lam k y
+    let lam1    = board => k => Csrt.board.get_col board k
+    let add_col = k => y => Csrt.board.sum_aux board lam1 k y
+    let sum_lin = Nat.for (Nat.zero) (Nat.zero) (Csrt.board.lin) (add_lin)
+    let sum_col = Nat.for (Nat.zero) (Nat.zero) (Csrt.board.lin) (add_col)
+    Nat.add sum_lin sum_col
+}
+
+Csrt.board.sum_aux (board: Csrt.board) (get_line: Csrt.board -> Nat -> List Csrt.tile) (idx: Nat) (sum: Nat) : Nat {
+    Nat.add sum (Csrt.board.sum_line (get_line (board) (idx)))
+}
+
+Csrt.board.sum_line (line: List Csrt.tile) : Nat {
+    let acc_tile = (tile: Csrt.tile) => (acc: Nat) => (Nat.add (Word.to_nat tile) acc)
+    let func = k => y => Word.lte k y 
+    let sorted   = List.is_sorted func (line)
+    if sorted { List.foldl Nat.zero acc_tile line} else { Nat.zero }
+}
+
+//Possicao do Tabuleiro = Board Pos
+Csrt.board.pos : Type { Pair Nat Nat }
+
+//o q eu preciso: recebe uma string "x y" e retorna um Maybe (Pair Nat Nat)
+//precisa tratar aqui na linha 173 se a linha comeca no 0 ou no 1 tirando o Nat.pred
+Csrt.board.pos_read (input: String) : Maybe Csrt.board.pos
+Csrt.board.pos_read (String.cons h (String.cons ht (String.cons htt String.nil))) =
+    if (Bool.and (Char.is_valid_digit h) (Char.is_valid_digit htt)) {
+          Maybe.some (Pair.new (Nat.pred (Char.to_digit h)) (Nat.pred (Char.to_digit htt)))  
+        }
+        else
+        { Maybe.none }
+Csrt.board.pos_read input = Maybe.none
+
+//Troco horrivel em kind1 cheio de Parser list.map Split lambda 10 lets, resolvi com 1 patern match e sem a funcao de validar
+// Cemsort.Board.Pos.read(input: String): Maybe<Cemsort.Board.Pos>
+// 	let split_input = String.split(input, " ")
+// 	let nat_parser = Parser.run!(Parser.nat)
+// 	let maybe_nums = List.map!!(nat_parser, split_input)
+// 	let extract_num = (mn: Maybe<Nat>) mn <> 0
+// 	let nums = List.map!!(extract_num, maybe_nums)
+// 	let y = nums[0] <> 0
+// 	let x = nums[1] <> 0
+// 	// The first board position is "1 1"
+// 	// internally it is converted to {0, 0}
+// 	let pos = {x-1, y-1}
+// 	let parse_ok =
+// 		List.all!(Maybe.is_some!, maybe_nums) && (x >? 0) && (y >? 0)
+// 	let len2 = List.length!(nums) =? 2
+// 	let valid_pos = Cemsort.Board.Pos.is_valid(pos)
+// 	if parse_ok && len2 && valid_pos then
+// 		some(pos)
+// 	else
+// 		none
+
+// Csrt.board.pos_is_valid (pos: Csrt.board.pos) : Bool
+// Csrt.board.pos_is_valid (Pair.new a b ) = 
+//     Bool.and (Nat.lte a Csrt.board.lin) (Nat.lte b Csrt.board.lin)
+
+//-----Funcoes Auxiliares
+
+Char.to_digit (x: Char) : Nat
+Char.to_digit x = if (Char.is_valid_digit x) 
+    { U60.to_nat (U60.sub x 48) }
+   else
+    { Nat.zero }
+
+Char.is_valid_digit (x: Char) : Bool
+Char.is_valid_digit  x = if (U60.greater_equal x '1' )
+    { if (U60.less_equal x (U60.add 48 (Nat.to_u60 (Csrt.board.lin)))) { Bool.true } else { Bool.false } }
+   else 
+    { Bool.false }
+
+// ----------- Game logic Kind2-------------
+// Main {
+//     let ini = Csrt.state.ini
+//     let board = Csrt.board.ini
+//     let pos = Pair.new (Nat.succ Nat.zero) (Nat.zero)
+//     let val = Word.o (Word.o (Word.o (Word.i (Word.i (Word.o (Word.o (Word.e)))))))
+//     let a = Csrt.board.set board pos val
+//     let stat1 = Csrt.state.new a val (Word.o (Word.o (Word.o (Word.o (Word.i (Word.e))))))
+//     let pos1 = Pair.new (Nat.succ Nat.zero) (Nat.succ (Nat.succ Nat.zero))
+//     let val1 = Word.o (Word.o (Word.i (Word.o (Word.i (Word.o (Word.i (Word.e)))))))
+//     let b = Csrt.board.set a pos1 val1
+//     let stat2 = Csrt.state.new b val1 (Word.o (Word.o (Word.o (Word.i (Word.o (Word.e))))))
+//     stat2
+//     //Csrt.board.show b //(stat2 board)
+// }
+
+// ----------- Game logic Kind1-------------
+
+// Main {
+//  do IO {
+   
+//     ask end_state = Csrt.game_loop start_state
+//     Fn end_state
+//  }   
+// }
+
+// Fn (state: Csrt.state) : IO Csrt.state
+// Fn (Csrt.state.new board num turn) = IO {
+//        let start_state = Csrt.state.ini
+
+// }
+
+
+// Csrt.take_new_num (state: Csrt.state) : IO Csrt.num {
+//     do IO {
+        
+//     }
+// }
+
+
+// kind1_100sort: _
+// 	IO {
+// 		// Initialize the state
+// 		let start_state = Cemsort.State.initial
+	
+// 		// Play a game
+// 		get end_state = Cemsort.game_loop(start_state)
+	
+// 		// Show results
+// 		open end_state
+// 		let points = Cemsort.Board.sum_points(end_state.board)
+// 		IO.print("\nFinal board:")
+// 		IO.print(Cemsort.Board.show(end_state.board))
+// 		IO.print("Score: " | Nat.show(points))
+
+// 		// Ask user if we go again
+// 		IO.print("\nGo again [y/N]?")
+// 		get input = IO.get_line
+// 		let go_again = Bool.read_yes_no(input, false)
+// 		if go_again then kind1_100sort else IO.end!(unit)
+// 	}
+
+// Cemsort.game_loop(state: Cemsort.State): IO<Cemsort.State>
+// 	IO {
+// 		// Tira um numero aleatorio
+// 		get new_num = Cemsort.take_new_number(state)
+// 		let state = state@crnt_num <- new_num
+		
+// 		// Mostrar numero e board
+// 		open state
+// 		let num_str = Cemsort.Tile.show(state.crnt_num)
+// 		IO.print("Next number: " | num_str)
+// 		IO.print(Cemsort.Board.show(state.board))
+
+// 		// Jogador escolhe uma casa vazia
+// 		get next_tile = Cemsort.get_next_tile(state)
+// 		open state
+// 		let state = state@board <- Cemsort.Board.set(state.board, next_tile, new_num)
+// 		let state = state@turn <~ Word.inc<Cemsort.State.Turn.length>
+
+// 		open state
+// 		get final_state = 
+// 			if state.turn =? Cemsort.State.Turn.end then
+// 				IO {return state}
+// 			else
+// 				Cemsort.game_loop(state)
+// 		return final_state
+// 	}
+
+// Cemsort.take_new_number(state: Cemsort.State): IO<Cemsort.Tile>
+// 	IO {
+// 		open state
+// 		get new_num = IO.random(Cemsort.max_num)
+// 		let new_num = new_num + 1
+// 		let new_num = Nat.to_word(Cemsort.Tile.length, new_num)
+// 		get new_num = 
+// 			if Cemsort.Board.contains(state.board, new_num) then
+// 				Cemsort.take_new_number(state)
+// 			else IO {
+// 				return new_num
+// 			}
+// 		return new_num
+// 	}
+
+// Cemsort.get_next_tile(state: Cemsort.State): IO<Cemsort.Board.Pos>
+// 	IO {
+// 		IO.print("Choose where to put the number (row col):")
+// 		get input = IO.get_line
+// 		let m_pos = Cemsort.Board.Pos.read(input)
+// 		get pos = case m_pos {
+// 			none: IO {
+// 				IO.print("Invalid position")
+// 				get next_tile = Cemsort.get_next_tile(state)
+// 				return next_tile
+// 			}
+// 			some:
+// 				if Cemsort.State.is_move_valid(state, m_pos <> {0,0}) then
+// 					IO {return m_pos <> {0,0}}
+// 				else IO {
+// 					IO.print("Position already filled")
+// 					get next_tile = Cemsort.get_next_tile(state)
+// 					return next_tile
+// 				}
+// 		}
+// 		return pos
+// 	}    
+

@@ -1,0 +1,21 @@
+// Numero maximo 59 (1-60)
+Nsrt.num_max :  U120 { U120.new 0 59 }
+
+//Estado do jogo com 3 construtores: tabuleiro, numero sortiado e turno
+Nsrt.state : Type
+Nsrt.state.new (fboard: U120) : Nsrt.state
+
+//Declaro o estado inicial do jogo
+Nsrt.state.ini : Nsrt.state {
+    Nsrt.state.new (Nsrt.board.ini) 
+}
+
+
+
+//Board
+Nsrt.board.lin : U120 { U120.new 0 4 }
+
+
+Nsrt.board.ini : U120 {
+    U120.new 0 0
+}
